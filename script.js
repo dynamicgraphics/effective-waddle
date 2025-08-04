@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             charIndex++;
             typingInterval = setTimeout(typeStory, typingDelay);
         } else {
-            startupTextElement.innerText = storyText + "\n\n(PRESS ANY KEY TO BEGIN)";
+            startupTextElement.innerText = storyText + "\n\n(PRESS ANY KEY OR TAP TO BEGIN)";
         }
     }
 
@@ -134,12 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
         typeStory();
     }
 
-    // --- Event Listeners ---
-    document.addEventListener('keydown', () => {
+    function handleStart() {
         if (screens.startup.classList.contains('active')) {
             if (charIndex < storyText.length) {
                 clearTimeout(typingInterval);
-                startupTextElement.innerText = storyText + "\n\n(PRESS ANY KEY TO BEGIN)";
+                startupTextElement.innerText = storyText + "\n\n(PRESS ANY KEY OR TAP TO BEGIN)";
             } else {
                 localStorage.setItem('hasPlayedBefore', 'true');
                 showScreen('scan');
@@ -147,5 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 startScan();
             }
         }
-    });
+    }
+
+    // --- Event Listeners ---
+    document.addEventListener('keydown', handleStart);
+    document.getElementById('startup-screen').addEventListener('click', handleStart);
+
 });
