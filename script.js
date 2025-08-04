@@ -81,8 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const dataArray = new Uint8Array(bufferLength);
 
             const sampleRate = audioContext.sampleRate;
-            const frequency = 22000;
-            const tolerance = 2000; // Checking a very wide 4kHz range
+            const frequency = 1000; // Listening for an audible 1 kHz tone
+            const tolerance = 100;
 
             const targetBinStart = Math.round((frequency - tolerance) / (sampleRate / analyser.fftSize));
             const targetBinEnd = Math.round((frequency + tolerance) / (sampleRate / analyser.fftSize));
