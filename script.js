@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updatePsyMeter(signalStrength) {
         const background = document.getElementById('psy-meter-background');
-        const colorInterpolation = Math.min(signalStrength * 2, 1);
+        const colorInterpolation = Math.min(signalStrength * 4, 1);
         const lowColor = '0, 0, 255';
         const highColor = '255, 0, 0';
         const newColor = `rgb(${
@@ -80,19 +80,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
 
-            const frequency = 22000;
             const sampleRate = audioContext.sampleRate;
-            const targetBin = Math.round(frequency / (sampleRate / analyser.fftSize));
+            const frequency = 22000;
+            const tolerance = 2000; // Checking a very wide 4kHz range
+
+            const targetBinStart = Math.round((frequency - tolerance) / (sampleRate / analyser.fftSize));
+            const targetBinEnd = Math.round((frequency + tolerance) / (sampleRate / analyser.fftSize));
 
             function detectSignal() {
                 analyser.getByteFrequencyData(dataArray);
 
-                const targetFrequencyValue = dataArray[targetBin];
-                const signalStrength = targetFrequencyValue / 255.0;
+                let totalSignal = 0;
+                let binCount = 0;
+                for (let i = targetBinStart; i <= targetBinEnd; i++) {
+                    if (dataArray[i] > 0) {
+                        totalSignal += dataArray[i];
+                        binCount++;
+                    }
+                }
+                
+                let signalStrength = 0;
+                if (binCount > 0) {
+                    signalStrength = (totalSignal / binCount) / 255.0;
+                }
                 
                 updatePsyMeter(signalStrength);
 
-                const threshold = 0.5;
+                const threshold = 0.1;
                 if (signalStrength > threshold) {
                     onBeaconFound();
                 }
