@@ -3,48 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Psyde Kwest</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Microphone Test</title>
 </head>
 <body>
-    <div id="startup-screen" class="screen active">
-        <div class="intro-text-container">
-            <h1 class="logo">Psyde Kwest</h1>
-            <p id="startup-text" class="story-text"></p>
-            <button id="start-button" class="mt-4 hidden">Start</button>
-        </div>
+    <div style="text-align: center; padding-top: 50px;">
+        <h1>Microphone Test</h1>
+        <p>Click the button to see if your browser prompts for microphone access.</p>
+        <button id="test-button">Start Test</button>
+        <p id="status-message" style="margin-top: 20px;"></p>
     </div>
-
-    <div id="scan-screen" class="screen hidden">
-        <div class="token-container">
-            <span class="token-slot">?</span>
-            <span class="token-slot">?</span>
-            <span class="token-slot">?</span>
-        </div>
-        <div class="psy-meter-container">
-            <div id="psy-meter-background"></div>
-            <div class="psy-meter-needle"></div>
-            <div class="psy-meter-label">PSY METER</div>
-        </div>
-        <div id="diagnostic-output" class="text-white text-center text-lg mt-4">Signal: 0</div>
-    </div>
-
-    <div id="clue-screen" class="screen hidden">
-        <div class="clue-text">
-            <h2>Clue Found!</h2>
-            <p>The next symbol is located...</p>
-            <p class="mt-4">(Tap to continue)</p>
-        </div>
-    </div>
-
-    <div id="winner-screen" class="screen hidden">
-        <div class="winner-text">
-            <h2>You Did It!</h2>
-            <p>You have found all the symbols.</p>
-            <div id="qr-code"></div>
-        </div>
-    </div>
-
     <script src="script.js"></script>
 </body>
 </html>
