@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psyde Kwest</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+
+    <div id="app-container">
+
+        <div id="startup-screen" class="screen active">
+            <div id="startup-text"></div>
+        </div>
+
+        <div id="scan-screen" class="screen hidden">
+            <div id="psy-meter-background"></div>
+            <div id="scanline-overlay"></div>
+            <div id="signal-meter">
+                <div id="meter-needle"></div>
+                <div class="meter-label low">LOW</div>
+                <div class="meter-label high">HIGH</div>
+            </div>
+            <div id="signal-pulse"></div>
+            <div id="signal-text">SCANNING FOR SIGNAL...</div>
+            <div id="token-matrix">
+                <div class="token-slot"></div>
+                <div class="token-slot"></div>
+                <div class="token-slot"></div>
+                <div class="token-slot"></div>
+            </div>
+        </div>
+
+        <div id="clue-screen" class="screen hidden">
+            <div id="clue-text"></div>
+        </div>
+
+        <div id="winner-screen" class="screen hidden">
+            <div id="winner-text">YOU WON!</div>
+            <div id="winner-qr-code"></div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
