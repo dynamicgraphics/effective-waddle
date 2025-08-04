@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const typingDelay = 50;
 
     // --- Audio Variables ---
-    let audioStream; // Store the audio stream for later release
+    let audioStream;
     let audioContext;
     let analyser;
 
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentStep: 0,
         tokenSequence: []
     };
-    
+
     function showScreen(screenName) {
         for (let name in screens) {
             if (name === screenName) {
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // New function to stop the microphone stream
+    // Function to stop the microphone stream
     function stopScan() {
         if (audioStream) {
             audioStream.getTracks().forEach(track => track.stop());
@@ -51,10 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
+
             const source = audioContext.createMediaStreamSource(audioStream);
             analyser = audioContext.createAnalyser();
-            
+
             analyser.fftSize = 2048;
             source.connect(analyser);
 
@@ -67,9 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const tolerance = 100;
             const targetBinStart = Math.round((targetFrequency - tolerance) / binSize);
             const targetBinEnd = Math.round((targetFrequency + tolerance) / binSize);
-            
+
             // Now start the game logic after getting permission
             showScreen('scan');
+            generateTokenSequence();
 
             function detectSignal() {
                 if (!audioContext || audioContext.state === 'closed') {
@@ -91,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     signalValue = Math.floor(totalSignal / binCount);
                 }
 
-                updatePsyMeter(signalValue / 255.0); // Now using the real signal value
+                updatePsyMeter(signalValue / 255.0);
 
                 const threshold = 0.1;
                 if ((signalValue / 255.0) > threshold) {
@@ -109,9 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateTokenSequence() {
-        gameProgress.tokenSequence = ['⭐', '🌙', '🌞']; 
+        gameProgress.tokenSequence = ['⭐', '🌙', '🌞'];
     }
-    
+
     function updatePsyMeter(signalStrength) {
         const background = document.getElementById('psy-meter-background');
         const colorInterpolation = Math.min(signalStrength * 4, 1);
@@ -142,45 +143,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function typeStory() {
-        const hasPlayedBefore = localStorage.getItem('hasPlayedBefore');
         const storyText = "Our 'story' has been stolen and we need the symbols to help! Can you get them back?";
-        if (hasPlayedBefore) {
-            showScreen('scan');
-            generateTokenSequence();
-            startScan();
+        if (charIndex < storyText.length) {
+            startupTextElement.innerText = storyText.substring(0, charIndex + 1);
+            charIndex++;
+            typingInterval = setTimeout(typeStory, typingDelay);
         } else {
-            if (charIndex < storyText.length) {
-                startupTextElement.innerText = storyText.substring(0, charIndex + 1);
-                charIndex++;
-                typingInterval = setTimeout(typeStory, typingDelay);
-            } else {
-                startupTextElement.innerText = storyText;
-                startButton.classList.remove('hidden');
-            }
+            startupTextElement.innerText = storyText;
+            startButton.classList.remove('hidden');
         }
     }
 
-    typeStory();
+    const hasPlayedBefore = localStorage.getItem('hasPlayedBefore');
 
-    function handleStart() {
-        if (screens.startup.classList.contains('active')) {
-            localStorage.setItem('hasPlayedBefore', 'true');
-            if (charIndex < "Our 'story' has been stolen and we need the symbols to help! Can you get them back?".length) {
-                clearTimeout(typingInterval);
-                startupTextElement.innerText = "Our 'story' has been stolen and we need the symbols to help! Can you get them back?";
-                startButton.classList.remove('hidden');
-            }
-        }
-    }
-
-    // --- Event Listeners ---
-    document.addEventListener('keydown', handleStart);
-    document.getElementById('startup-screen').addEventListener('click', handleStart);
-    if(startButton) {
-        startButton.addEventListener('click', startScan);
+    if (hasPlayedBefore) {
+        showScreen('startup');
+        startButton.innerText = "Continue";
+        startButton.classList.remove('hidden');
+        startupTextElement.innerText = "Welcome back! Click Continue to resume your quest.";
+    } else {
+        typeStory();
     }
     
-    // New event listeners to stop the microphone
+    // --- Event Listeners ---
+    if(startButton) {
+        startButton.addEventListener('click', () => {
+            localStorage.setItem('hasPlayedBefore', 'true');
+            startScan();
+        });
+    }
+
     window.addEventListener('pagehide', stopScan);
     window.addEventListener('visibilitychange', () => {
         if (document.hidden) {
