@@ -1,5 +1,68 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- UI State Management ---
+
+    const diagnosticOutput = document.getElementById('diagnostic-output');
+    let audioContext;
+    let analyser;
+
+    async function startDiagnosticScan() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const source = audioContext.createMediaStreamSource(stream);
+            analyser = audioContext.createAnalyser();
+            
+            analyser.fftSize = 2048;
+            source.connect(analyser);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const sampleRate = audioContext.sampleRate;
+            const targetFrequency = 1000;
+            const binSize = sampleRate / analyser.fftSize;
+            const targetBin = Math.round(targetFrequency / binSize);
+            const tolerance = 100;
+            const targetBinStart = Math.round((targetFrequency - tolerance) / binSize);
+            const targetBinEnd = Math.round((targetFrequency + tolerance) / binSize);
+
+            function detectSignal() {
+                if (!audioContext || audioContext.state === 'closed') {
+                    return;
+                }
+                analyser.getByteFrequencyData(dataArray);
+
+                let totalSignal = 0;
+                let binCount = 0;
+                for (let i = targetBinStart; i <= targetBinEnd; i++) {
+                    if (dataArray[i] > 0) {
+                        totalSignal += dataArray[i];
+                        binCount++;
+                    }
+                }
+
+                let signalValue = 0;
+                if (binCount > 0) {
+                    signalValue = Math.floor(totalSignal / binCount);
+                }
+
+                // Update the UI with the signal value
+                if (diagnosticOutput) {
+                    diagnosticOutput.innerText = `Signal: ${signalValue}`;
+                }
+
+                requestAnimationFrame(detectSignal);
+            }
+
+            detectSignal();
+
+        } catch (err) {
+            console.error('Error accessing the microphone:', err);
+        }
+    }
+
+    // --- The rest of your game logic goes here ---
+
     const screens = {
         startup: document.getElementById('startup-screen'),
         scan: document.getElementById('scan-screen'),
@@ -7,31 +70,17 @@ document.addEventListener('DOMContentLoaded', () => {
         winner: document.getElementById('winner-screen')
     };
 
-    function showScreen(screenName) {
-        for (let name in screens) {
-            if (name === screenName) {
-                screens[name].classList.remove('hidden');
-                screens[name].classList.add('active');
-            } else {
-                screens[name].classList.add('hidden');
-                screens[name].classList.remove('active');
-            }
-        }
-    }
-
-    // --- Game Logic Placeholders ---
     let gameProgress = {
         currentStep: 0,
         tokenSequence: []
     };
     
     function generateTokenSequence() {
-        // TODO: Implement logic to get a randomized token sequence from Firebase
         gameProgress.tokenSequence = ['⭐', '🌙', '🌞']; 
     }
     
     function updatePsyMeter(signalStrength) {
-        const background = document.getElementById('psy-meter-background');
+        const background = document.getElementById('psy-meter-container');
         const colorInterpolation = Math.min(signalStrength * 4, 1);
         const lowColor = '0, 0, 255';
         const highColor = '255, 0, 0';
@@ -51,78 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tokenSlots[gameProgress.currentStep]) {
             tokenSlots[gameProgress.currentStep].innerText = currentToken;
         }
-
         if (gameProgress.currentStep >= gameProgress.tokenSequence.length - 1) {
             showScreen('winner');
-            // TODO: Generate and display the unique QR code
         } else {
             showScreen('clue');
-            // TODO: Display the next clue here
             gameProgress.currentStep++;
         }
     }
 
-    // --- ULTRASONIC DETECTION CODE ---
-    let audioContext;
-    let analyser;
-
-    async function startScan() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            const source = audioContext.createMediaStreamSource(stream);
-            analyser = audioContext.createAnalyser();
-            
-            analyser.fftSize = 2048;
-            source.connect(analyser);
-
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            const sampleRate = audioContext.sampleRate;
-            const frequency = 1000; // Listening for an audible 1 kHz tone
-            const tolerance = 100;
-
-            const targetBinStart = Math.round((frequency - tolerance) / (sampleRate / analyser.fftSize));
-            const targetBinEnd = Math.round((frequency + tolerance) / (sampleRate / analyser.fftSize));
-
-            function detectSignal() {
-                analyser.getByteFrequencyData(dataArray);
-
-                let totalSignal = 0;
-                let binCount = 0;
-                for (let i = targetBinStart; i <= targetBinEnd; i++) {
-                    if (dataArray[i] > 0) {
-                        totalSignal += dataArray[i];
-                        binCount++;
-                    }
-                }
-                
-                let signalStrength = 0;
-                if (binCount > 0) {
-                    signalStrength = (totalSignal / binCount) / 255.0;
-                }
-                
-                updatePsyMeter(signalStrength);
-
-                const threshold = 0.1;
-                if (signalStrength > threshold) {
-                    onBeaconFound();
-                }
-
-                requestAnimationFrame(detectSignal);
-            }
-
-            detectSignal();
-
-        } catch (err) {
-            console.error('Error accessing the microphone:', err);
-            // TODO: Show an error message to the user on the UI
-        }
-    }
-
-    // --- STARTUP AND STORY LOGIC ---
     const hasPlayedBefore = localStorage.getItem('hasPlayedBefore');
     const storyText = "Our 'story' has been stolen and we need the symbols to help! Can you get them back?";
     const startupTextElement = document.getElementById('startup-text');
@@ -143,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hasPlayedBefore) {
         showScreen('scan');
         generateTokenSequence();
-        startScan();
+        startDiagnosticScan();
     } else {
         typeStory();
     }
@@ -157,13 +142,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('hasPlayedBefore', 'true');
                 showScreen('scan');
                 generateTokenSequence();
-                startScan();
+                startDiagnosticScan();
             }
         }
     }
 
-    // --- Event Listeners ---
     document.addEventListener('keydown', handleStart);
     document.getElementById('startup-screen').addEventListener('click', handleStart);
+    
+    window.addEventListener('beforeunload', () => {
+        if (audioContext) {
+            audioContext.close();
+        }
+    });
 
 });
