@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
         winner: document.getElementById('winner-screen')
     };
 
+    let audioStream; // Store the audio stream for later release
+
     function showScreen(screenName) {
         for (let name in screens) {
             if (name === screenName) {
@@ -66,12 +68,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let audioContext;
     let analyser;
 
+    // New function to stop the microphone stream
+    function stopScan() {
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            if (audioContext) {
+                audioContext.close();
+            }
+            audioStream = null;
+            audioContext = null;
+        }
+    }
+
     async function startScan() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
-            const source = audioContext.createMediaStreamSource(stream);
+            const source = audioContext.createMediaStreamSource(audioStream);
             analyser = audioContext.createAnalyser();
             
             analyser.fftSize = 2048;
@@ -81,13 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const dataArray = new Uint8Array(bufferLength);
 
             const sampleRate = audioContext.sampleRate;
-            const frequency = 1000; // Listening for an audible 1 kHz tone
+            const frequency = 1000;
             const tolerance = 100;
 
             const targetBinStart = Math.round((frequency - tolerance) / (sampleRate / analyser.fftSize));
             const targetBinEnd = Math.round((frequency + tolerance) / (sampleRate / analyser.fftSize));
 
             function detectSignal() {
+                if (!audioContext || audioContext.state === 'closed') {
+                    return; // Stop the loop if the context is closed
+                }
                 analyser.getByteFrequencyData(dataArray);
 
                 let totalSignal = 0;
@@ -165,5 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listeners ---
     document.addEventListener('keydown', handleStart);
     document.getElementById('startup-screen').addEventListener('click', handleStart);
-
+    
+    // New event listeners to stop the microphone
+    window.addEventListener('pagehide', stopScan);
+    window.addEventListener('beforeunload', stopScan);
 });
